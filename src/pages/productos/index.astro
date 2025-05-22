@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Banner from '../../components/widgets/Banner.astro';
+import ProductsGrid from '../../components/widgets/ProductsGrid';
+---
+
+<Layout title="Productos">
+    <!-- <Welcome /> -->
+	<Banner />
+    <ProductsGrid client:load />
+</Layout>
