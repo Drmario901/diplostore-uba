@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/admin/Layout.astro';
+import UserList from '../../components/widgets/admin/UserList.tsx';
+import AdminGuard from '../../components/widgets/admin/AdminGuard.jsx';
+---
+
+<Layout title="Usuarios de la tienda">
+  <AdminGuard client:load>
+    <UserList client:load />
+  </AdminGuard>
+</Layout>

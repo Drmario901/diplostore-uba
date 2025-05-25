@@ -16,6 +16,8 @@ const LoginForm = () => {
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [loginError, setLoginError] = useState("")
+  //const endpointLocal = "http://localhost/diplo-store-api/login";
+  const endpointProduction = "https://diplostore.fwh.is/diplo-store-api/login";
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -67,8 +69,7 @@ const LoginForm = () => {
 
     try {
       const response = await axios.post(
-        // "http://127.0.0.1/diplo-store-api/login",
-        "https://diplostore.fwh.is/diplo-store-api/login",
+        endpointProduction,
         {
           email: formData.email,
           password: formData.password,
@@ -95,7 +96,9 @@ const LoginForm = () => {
             localStorage.setItem("user", JSON.stringify(response.data.user))
           }
 
-          window.location.href = "/"
+         const redirectTo = response.data.redirect || "/"
+
+          window.location.href = redirectTo
         })
       } else {
         throw new Error("Respuesta inesperada del servidor")
@@ -224,11 +227,11 @@ const LoginForm = () => {
               </label>
             </div>
 
-            <div className="text-sm">
+            {/* <div className="text-sm">
               <a href="/recuperar-contrasena" className="font-medium text-teal-600 hover:text-teal-500">
                 ¿Olvidaste tu contraseña?
               </a>
-            </div>
+            </div> */}
           </div>
 
           <div>

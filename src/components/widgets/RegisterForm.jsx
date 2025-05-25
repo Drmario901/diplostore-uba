@@ -18,6 +18,8 @@ const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
+  //const endpointLocal = "http://localhost/diplo-store-api/register";
+   const endpointProduction = "https://diplostore.fwh.is/diplo-store-api/register";
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -92,7 +94,7 @@ const RegisterForm = () => {
         password: formData.password,
       }
 
-      const response = await axios.post("https://diplostore.fwh.is/diplo-store-api/register", registerData, {
+      const response = await axios.post(endpointProduction, registerData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -108,7 +110,7 @@ const RegisterForm = () => {
             text: "Tu cuenta ha sido creada correctamente",
             confirmButtonColor: "#0d9488",
           }).then(() => {
-            window.location.href = "/"
+            window.location.href = '/'
           })
         } else {
           Swal.fire({
@@ -315,10 +317,10 @@ const RegisterForm = () => {
                 <a href="/terminos" className="text-teal-600 hover:text-teal-500">
                   términos y condiciones
                 </a>{" "}
-                y la{" "}
+                {/* y la{" "}
                 <a href="/privacidad" className="text-teal-600 hover:text-teal-500">
                   política de privacidad
-                </a>
+                </a> */}
               </label>
               {errors.terms && <p className="mt-1 text-sm text-red-600">{errors.terms}</p>}
             </div>

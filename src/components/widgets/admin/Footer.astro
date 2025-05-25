@@ -1,0 +1,25 @@
+---
+import { ShoppingBag } from '@lucide/astro';
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-gray-100 py-6 mt-auto">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
+        <a href="/" class="flex items-center gap-1.5 text-teal-600 hover:text-teal-700 transition-colors">
+          <ShoppingBag class="h-5 w-5" />
+          <span class="font-medium text-sm text-gray-900">DIPLOSTORE</span>
+        </a>
+        
+        <p class="text-xs text-gray-500">&copy; {year} Todos los derechos reservados</p>
+      </div>
+      
+      <div class="flex items-center gap-6">
+        <!-- <a href="/terminos" class="text-xs text-gray-500 hover:text-teal-600 transition-colors">Términos</a> -->
+        <!-- <a href="#" class="text-xs text-gray-500 hover:text-teal-600 transition-colors">Privacidad</a>
+        <a href="#" class="text-xs text-gray-500 hover:text-teal-600 transition-colors">Contacto</a> -->
+      </div>
+    </div>
+  </div>
+</footer>
