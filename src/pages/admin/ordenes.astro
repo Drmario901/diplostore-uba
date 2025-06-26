@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/admin/Layout.astro';
+import Orders from '../../components/widgets/admin/OrdersList.tsx';
+import AdminGuard from '../../components/widgets/admin/AdminGuard.jsx';
+---
+
+<Layout title="Ordenes de la tienda">
+  <AdminGuard client:load>
+    <Orders client:load />
+  </AdminGuard>
+</Layout>

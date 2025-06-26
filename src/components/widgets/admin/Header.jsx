@@ -107,9 +107,9 @@ export default function Header() {
             <a href="admin/usuarios" className="text-gray-600 hover:text-teal-600 font-medium">
               Usuarios
             </a>
-            {/* <a href="/contacto" className="text-gray-600 hover:text-teal-600 font-medium">
-              Contacto
-            </a> */}
+            <a href="/admin/ordenes" className="text-gray-600 hover:text-teal-600 font-medium">
+              Ordenes
+            </a>
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
