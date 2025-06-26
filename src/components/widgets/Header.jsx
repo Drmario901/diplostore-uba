@@ -3,14 +3,24 @@
 import { useState, useEffect } from "react"
 import axios from "axios"
 import { ShoppingBag, Menu, LogOut, User } from "lucide-react"
+import Swal from "sweetalert2"
+import "sweetalert2/dist/sweetalert2.css"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [userData, setUserData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [currentPath, setCurrentPath] = useState("")
+
   //const endpointLocal = "http://localhost/diplo-store-api/user-data";
-  const endpointProduction = "https://diplostore.fwh.is/diplo-store-api/user-data";
+  const endpointProduction = "https://diplostore.fwh.is/diplo-store-api/user-data"
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentPath(window.location.pathname)
+    }
+  }, [])
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -22,13 +32,17 @@ export default function Header() {
       }
 
       try {
-        const response = await axios.post(endpointProduction, {
-          token: token
-        }, {
-          headers: {
-            "Content-Type": "application/json"
+        const response = await axios.post(
+          endpointProduction,
+          {
+            token: token,
           },
-        })
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        )
 
         console.log("User data response:", response.data)
         setUserData(response.data)
@@ -48,15 +62,68 @@ export default function Header() {
     fetchUserData()
   }, [])
 
-  const handleLogout = () => {
-    localStorage.removeItem("auth_token")
-    setUserData(null)
-    setIsMenuOpen(false)
-    window.location.href = "/"
+  const handleLogout = async () => {
+    try {
+      const result = await Swal.fire({
+        title: "¿Cerrar sesion?",
+        text: "¿Estas seguro de que quieres cerrar sesion?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#0d9488",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Si, cerrar sesion",
+        cancelButtonText: "Cancelar",
+      })
+
+      if (result.isConfirmed) {
+        await Swal.fire({
+          title: "Vuelve pronto",
+          text: "Has cerrado sesion exitosamente",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+          timerProgressBar: true,
+        })
+
+        localStorage.removeItem("auth_token")
+        setUserData(null)
+        setIsMenuOpen(false)
+        window.location.href = "/"
+      }
+    } catch (error) {
+      console.error("Error during logout:", error)
+    }
   }
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
+  }
+
+  const handleNavigation = (href, e) => {
+    const normalizedCurrent = currentPath.toLowerCase().replace(/\/$/, "")
+    const normalizedTarget = href.toLowerCase().replace(/\/$/, "")
+
+    if (
+      normalizedCurrent === normalizedTarget ||
+      (normalizedCurrent === "" && normalizedTarget === "/") ||
+      (normalizedCurrent === "/" && normalizedTarget === "")
+    ) {
+      e.preventDefault()
+      return false
+    }
+
+    return true
+  }
+
+  const isActiveRoute = (href) => {
+    const normalizedCurrent = currentPath.toLowerCase().replace(/\/$/, "")
+    const normalizedTarget = href.toLowerCase().replace(/\/$/, "")
+
+    return (
+      normalizedCurrent === normalizedTarget ||
+      (normalizedCurrent === "" && normalizedTarget === "/") ||
+      (normalizedCurrent === "/" && normalizedTarget === "")
+    )
   }
 
   useEffect(() => {
@@ -95,21 +162,43 @@ export default function Header() {
     <header className="bg-white shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <a href="/" className="flex items-center">
+          <a href="/" className="flex items-center" onClick={(e) => handleNavigation("/", e)}>
             <ShoppingBag className="h-8 w-8 text-teal-600" />
             <span className="ml-2 font-bold text-lg text-gray-900">DIPLOSTORE</span>
           </a>
 
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="/" className="text-gray-600 hover:text-teal-600 font-medium">
+            <a
+              href="/"
+              className={`font-medium transition-colors ${
+                isActiveRoute("/") ? "text-teal-600 cursor-default" : "text-gray-600 hover:text-teal-600 cursor-pointer"
+              }`}
+              onClick={(e) => handleNavigation("/", e)}
+            >
               Inicio
             </a>
-            <a href="/productos" className="text-gray-600 hover:text-teal-600 font-medium">
+            <a
+              href="/productos"
+              className={`font-medium transition-colors ${
+                isActiveRoute("/productos")
+                  ? "text-teal-600 cursor-default"
+                  : "text-gray-600 hover:text-teal-600 cursor-pointer"
+              }`}
+              onClick={(e) => handleNavigation("/productos", e)}
+            >
               Productos
             </a>
-            <a href="/contacto" className="text-gray-600 hover:text-teal-600 font-medium">
+            {/* <a
+              href="/contacto"
+              className={`font-medium transition-colors ${
+                isActiveRoute("/contacto")
+                  ? "text-teal-600 cursor-default"
+                  : "text-gray-600 hover:text-teal-600 cursor-pointer"
+              }`}
+              onClick={(e) => handleNavigation("/contacto", e)}
+            >
               Contacto
-            </a>
+            </a> */}
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
@@ -127,7 +216,7 @@ export default function Header() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center bg-gray-100 hover:bg-gray-200 text-red-600 px-3 py-2 rounded-md text-sm font-medium"
+                  className="flex items-center bg-gray-100 hover:bg-gray-200 text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   <LogOut className="h-4 w-4 mr-1" />
                   Cerrar sesión
@@ -137,13 +226,23 @@ export default function Header() {
               <>
                 <a
                   href="/login"
-                  className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActiveRoute("/login")
+                      ? "bg-teal-700 text-white cursor-default"
+                      : "bg-teal-600 hover:bg-teal-700 text-white"
+                  }`}
+                  onClick={(e) => handleNavigation("/login", e)}
                 >
                   Iniciar sesión
                 </a>
                 <a
                   href="/registro"
-                  className="bg-gray-100 hover:bg-gray-200 text-teal-600 px-4 py-2 rounded-md text-sm font-medium"
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActiveRoute("/registro")
+                      ? "bg-gray-200 text-teal-700 cursor-default"
+                      : "bg-gray-100 hover:bg-gray-200 text-teal-600"
+                  }`}
+                  onClick={(e) => handleNavigation("/registro", e)}
                 >
                   Registrarse
                 </a>
@@ -155,7 +254,7 @@ export default function Header() {
             <button
               id="toggle-menu"
               onClick={toggleMenu}
-              className="text-gray-600 hover:text-gray-900 focus:outline-none"
+              className="text-gray-600 hover:text-gray-900 focus:outline-none transition-colors"
               aria-expanded={isMenuOpen}
             >
               <Menu className="h-6 w-6" />
@@ -166,15 +265,45 @@ export default function Header() {
 
       <div id="mobile-menu" className={`md:hidden ${isMenuOpen ? "block" : "hidden"} border-t border-gray-200`}>
         <div className="px-4 py-3 space-y-3">
-          <a href="/" className="block text-gray-600 hover:text-teal-600 font-medium py-2">
+          <a
+            href="/"
+            className={`block font-medium py-2 transition-colors ${
+              isActiveRoute("/") ? "text-teal-600 cursor-default" : "text-gray-600 hover:text-teal-600"
+            }`}
+            onClick={(e) => {
+              if (handleNavigation("/", e)) {
+                setIsMenuOpen(false)
+              }
+            }}
+          >
             Inicio
           </a>
-          <a href="/productos" className="block text-gray-600 hover:text-teal-600 font-medium py-2">
+          <a
+            href="/productos"
+            className={`block font-medium py-2 transition-colors ${
+              isActiveRoute("/productos") ? "text-teal-600 cursor-default" : "text-gray-600 hover:text-teal-600"
+            }`}
+            onClick={(e) => {
+              if (handleNavigation("/productos", e)) {
+                setIsMenuOpen(false)
+              }
+            }}
+          >
             Productos
           </a>
-          <a href="/contacto" className="block text-gray-600 hover:text-teal-600 font-medium py-2">
+          {/* <a
+            href="/contacto"
+            className={`block font-medium py-2 transition-colors ${
+              isActiveRoute("/contacto") ? "text-teal-600 cursor-default" : "text-gray-600 hover:text-teal-600"
+            }`}
+            onClick={(e) => {
+              if (handleNavigation("/contacto", e)) {
+                setIsMenuOpen(false)
+              }
+            }}
+          >
             Contacto
-          </a>
+          </a> */}
 
           <div className="pt-2 border-t border-gray-200">
             {isLoading ? (
@@ -191,7 +320,7 @@ export default function Header() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-red-600 px-4 py-2 rounded-md text-sm font-medium"
+                  className="w-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-red-600 px-4 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Cerrar sesión
@@ -201,13 +330,31 @@ export default function Header() {
               <div className="space-y-3 pt-2">
                 <a
                   href="/login"
-                  className="block w-full text-center bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  className={`block w-full text-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActiveRoute("/login")
+                      ? "bg-teal-700 text-white cursor-default"
+                      : "bg-teal-600 hover:bg-teal-700 text-white"
+                  }`}
+                  onClick={(e) => {
+                    if (handleNavigation("/login", e)) {
+                      setIsMenuOpen(false)
+                    }
+                  }}
                 >
                   Iniciar sesión
                 </a>
                 <a
                   href="/registro"
-                  className="block w-full text-center bg-gray-100 hover:bg-gray-200 text-teal-600 px-4 py-2 rounded-md text-sm font-medium"
+                  className={`block w-full text-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActiveRoute("/registro")
+                      ? "bg-gray-200 text-teal-700 cursor-default"
+                      : "bg-gray-100 hover:bg-gray-200 text-teal-600"
+                  }`}
+                  onClick={(e) => {
+                    if (handleNavigation("/registro", e)) {
+                      setIsMenuOpen(false)
+                    }
+                  }}
                 >
                   Registrarse
                 </a>

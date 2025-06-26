@@ -29,17 +29,19 @@ interface StripeOrder {
   correo: string
   monto_db: string
   fecha: string
-  stripe: {
-    stripe_status: string
-    stripe_total: number
-    stripe_currency: string
-    stripe_payment_intent: string
-    stripe_email: string
-    stripe_metadata: {
-      nombre: string
-      user_id: string
-    }
-  }
+  stripe:
+    | {
+        stripe_status: string
+        stripe_total: number
+        stripe_currency: string
+        stripe_payment_intent: string
+        stripe_email: string
+        stripe_metadata: {
+          nombre: string
+          user_id: string
+        }
+      }
+    | []
 }
 
 export default function StripeOrdersManagement() {
@@ -65,7 +67,7 @@ export default function StripeOrdersManagement() {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
       currency: currency || "USD",
-    }).format(amount) 
+    }).format(amount)
   }
 
   const formatDate = (dateString: string) => {
@@ -90,13 +92,32 @@ export default function StripeOrdersManagement() {
     return { today, yesterday, lastWeek, lastMonth }
   }
 
+  const getStripeData = (order) => {
+    if (Array.isArray(order.stripe) || !order.stripe) {
+      return {
+        stripe_status: "pending",
+        stripe_total: 0,
+        stripe_currency: "USD",
+        stripe_payment_intent: "N/A",
+        stripe_email: order.correo,
+        stripe_metadata: {
+          nombre: order.usuario,
+          user_id: "",
+        },
+      }
+    }
+    return order.stripe
+  }
+
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      const matchSearch = `${order.usuario} ${order.correo} ${order.order_id} ${order.stripe.stripe_payment_intent}`
+      const stripeData = getStripeData(order)
+
+      const matchSearch = `${order.usuario} ${order.correo} ${order.order_id} ${stripeData.stripe_payment_intent}`
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
 
-      const matchStatus = statusFilter === "all" || order.stripe.stripe_status === statusFilter
+      const matchStatus = statusFilter === "all" || stripeData.stripe_status === statusFilter
 
       let matchDate = true
       if (dateFilter !== "all") {
@@ -124,7 +145,11 @@ export default function StripeOrdersManagement() {
   }, [orders, searchTerm, statusFilter, dateFilter])
 
   const totalAmount = useMemo(() => {
-    return filteredOrders.reduce((sum, order) => sum + order.stripe.stripe_total, 0)
+    return filteredOrders.reduce((sum, order) => {
+      const stripeData = getStripeData(order)
+      const amount = stripeData.stripe_total || 0
+      return sum + (typeof amount === "number" && !isNaN(amount) ? amount : 0)
+    }, 0)
   }, [filteredOrders])
 
   useEffect(() => {
@@ -153,7 +178,7 @@ export default function StripeOrdersManagement() {
           </span>
           <span className="flex items-center gap-1">
             <DollarSign className="w-4 h-4" />
-            {formatCurrency(totalAmount, "USD")} total
+            {totalAmount > 0 ? formatCurrency(totalAmount, "USD") : "$0.00"} total
           </span>
         </div>
       </div>
@@ -217,8 +242,9 @@ export default function StripeOrdersManagement() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filteredOrders.map((order) => {
-              const StatusIcon = statusConfig[order.stripe.stripe_status]?.icon || AlertCircle
-              const statusInfo = statusConfig[order.stripe.stripe_status] || statusConfig.pending
+              const stripeData = getStripeData(order)
+              const StatusIcon = statusConfig[stripeData.stripe_status]?.icon || AlertCircle
+              const statusInfo = statusConfig[stripeData.stripe_status] || statusConfig.pending
 
               return (
                 <tr key={order.order_id} className="hover:bg-gray-50">
@@ -233,7 +259,9 @@ export default function StripeOrdersManagement() {
                   <td className="px-4 py-3 text-right font-semibold">
                     <div className="flex flex-col items-end">
                       <span className="text-gray-800">
-                        {formatCurrency(order.stripe.stripe_total, order.stripe.stripe_currency)}
+                        {stripeData.stripe_total && !isNaN(stripeData.stripe_total) && stripeData.stripe_total > 0
+                          ? formatCurrency(stripeData.stripe_total, stripeData.stripe_currency)
+                          : "Pendiente"}
                       </span>
                       <span className="text-xs text-gray-500">DB: ${order.monto_db}</span>
                     </div>
@@ -255,7 +283,7 @@ export default function StripeOrdersManagement() {
                   <td className="px-4 py-3 font-mono text-xs text-gray-500">
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(order.stripe.stripe_payment_intent)
+                        navigator.clipboard.writeText(stripeData.stripe_payment_intent)
                         Swal.fire({
                           icon: "success",
                           title: "Copiado",
@@ -267,7 +295,7 @@ export default function StripeOrdersManagement() {
                       className="hover:text-teal-600 transition-colors cursor-pointer"
                       title="Click para copiar"
                     >
-                      {order.stripe.stripe_payment_intent}
+                      {stripeData.stripe_payment_intent}
                     </button>
                   </td>
                 </tr>
@@ -289,15 +317,17 @@ export default function StripeOrdersManagement() {
           <div className="flex flex-wrap gap-4 justify-center text-sm">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-100 rounded-full"></div>
-              <span>Pagadas: {filteredOrders.filter((o) => o.stripe.stripe_status === "paid").length}</span>
+              <span>Pagadas: {filteredOrders.filter((o) => getStripeData(o).stripe_status === "paid").length}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-yellow-100 rounded-full"></div>
-              <span>Pendientes: {filteredOrders.filter((o) => o.stripe.stripe_status === "pending").length}</span>
+              <span>
+                Pendientes: {filteredOrders.filter((o) => getStripeData(o).stripe_status === "pending").length}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-red-100 rounded-full"></div>
-              <span>Fallidas: {filteredOrders.filter((o) => o.stripe.stripe_status === "failed").length}</span>
+              <span>Fallidas: {filteredOrders.filter((o) => getStripeData(o).stripe_status === "failed").length}</span>
             </div>
           </div>
         </div>
