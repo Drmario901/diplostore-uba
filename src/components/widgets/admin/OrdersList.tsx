@@ -202,8 +202,7 @@ export default function StripeOrdersManagement() {
         >
           <option value="all">Todos los estados</option>
           <option value="paid">✅ Pagado</option>
-          <option value="pending">⏳ Pendiente</option>
-          <option value="failed">❌ Fallido</option>
+          <option value="pending">❌ Cancelado</option>
         </select>
 
         <select
@@ -311,27 +310,6 @@ export default function StripeOrdersManagement() {
           </div>
         )}
       </div>
-
-      {filteredOrders.length > 0 && (
-        <div className="bg-white rounded-xl shadow p-4">
-          <div className="flex flex-wrap gap-4 justify-center text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-100 rounded-full"></div>
-              <span>Pagadas: {filteredOrders.filter((o) => getStripeData(o).stripe_status === "paid").length}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-yellow-100 rounded-full"></div>
-              <span>
-                Pendientes: {filteredOrders.filter((o) => getStripeData(o).stripe_status === "pending").length}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-100 rounded-full"></div>
-              <span>Fallidas: {filteredOrders.filter((o) => getStripeData(o).stripe_status === "failed").length}</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
