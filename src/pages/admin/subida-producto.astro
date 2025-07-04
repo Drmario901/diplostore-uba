@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/admin/Layout.astro';
+import ProductUploadForm from '../../components/widgets/admin/ProductUploadForm.tsx';
+import AdminGuard from '../../components/widgets/admin/AdminGuard.jsx';
+---
+
+<Layout title="Subida de productos">
+  <AdminGuard client:load>
+    <ProductUploadForm client:load />
+  </AdminGuard>
+</Layout>

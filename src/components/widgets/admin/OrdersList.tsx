@@ -19,7 +19,7 @@ import "sweetalert2/dist/sweetalert2.css"
 
 const statusConfig = {
   paid: { name: "Pagado", icon: CheckCircle, color: "text-green-600", bg: "bg-green-100" },
-  pending: { name: "Pendiente", icon: AlertCircle, color: "text-yellow-600", bg: "bg-yellow-100" },
+  pending: { name: "Cancelado", icon: AlertCircle, color: "text-red-600", bg: "bg-red-100" },
   failed: { name: "Fallido", icon: XCircle, color: "text-red-600", bg: "bg-red-100" },
 }
 

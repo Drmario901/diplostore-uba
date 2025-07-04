@@ -20,6 +20,10 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "sweetalert2": "^11.21.2",
-    "tailwindcss": "^4.1.7"
+    "tailwindcss": "^4.1.7",
+    "terser": "^5.43.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-legacy": "^7.0.0"
   }
 }

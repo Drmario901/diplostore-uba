@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
   ShoppingCart,
@@ -15,6 +14,8 @@ import {
   Calendar,
   CreditCard,
   Eye,
+  FileText,
+  ExternalLink,
 } from "lucide-react"
 
 const ProductsGrid = () => {
@@ -28,7 +29,6 @@ const ProductsGrid = () => {
   const [purchaseHistory, setPurchaseHistory] = useState([])
   const [loadingPurchases, setLoadingPurchases] = useState(false)
   const [purchaseError, setPurchaseError] = useState(null)
-
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
@@ -43,7 +43,6 @@ const ProductsGrid = () => {
   const [fetchingLock, setFetchingLock] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [totalProducts, setTotalProducts] = useState(0)
-
   const responseCache = useRef({})
 
   useEffect(() => {
@@ -99,7 +98,6 @@ const ProductsGrid = () => {
       }
 
       const data = await response.json()
-
       const purchases = Array.isArray(data) ? data : [data]
       setPurchaseHistory(purchases)
     } catch (error) {
@@ -121,6 +119,12 @@ const ProductsGrid = () => {
   const closePurchaseHistory = () => {
     setIsPurchaseHistoryAnimating(false)
     setTimeout(() => setIsPurchaseHistoryOpen(false), 300)
+  }
+
+  const handleViewInvoice = (invoiceUrl) => {
+    if (invoiceUrl) {
+      window.open(invoiceUrl, "_blank", "noopener,noreferrer")
+    }
   }
 
   const formatDate = (dateString) => {
@@ -153,7 +157,6 @@ const ProductsGrid = () => {
   const addToCart = (product) => {
     setCartItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === product.id)
-
       if (existingItem) {
         const updatedItems = prevItems.map((item) =>
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
@@ -215,7 +218,6 @@ const ProductsGrid = () => {
     }
 
     const auth_token = localStorage.getItem("auth_token")
-
     setIsProcessingPayment(true)
 
     try {
@@ -252,7 +254,6 @@ const ProductsGrid = () => {
 
       if (result.checkout_url || result.url) {
         const checkoutUrl = result.checkout_url || result.url
-
         if (typeof window !== "undefined") {
           localStorage.setItem(
             "checkout-in-progress",
@@ -262,14 +263,12 @@ const ProductsGrid = () => {
             }),
           )
         }
-
         window.location.href = checkoutUrl
       } else {
         throw new Error("No se recibió la URL de checkout")
       }
     } catch (error) {
       console.error("Error al procesar el checkout:", error)
-
       alert(`Error al procesar el pago: ${error.message}. Por favor, intenta nuevamente.`)
     } finally {
       setIsProcessingPayment(false)
@@ -297,7 +296,6 @@ const ProductsGrid = () => {
 
   const extractCategories = useCallback((productList) => {
     const categoryMap = {}
-
     productList.forEach((product) => {
       if (product.category) {
         const category = product.category.toLowerCase()
@@ -323,7 +321,14 @@ const ProductsGrid = () => {
     } else {
       setSelectedCategory(categoryName)
     }
+    setPage(1)
+    setProducts([])
+    setInitialLoading(true)
+    responseCache.current = {}
+  }
 
+  const clearAllFilters = () => {
+    setSelectedCategory(null)
     setPage(1)
     setProducts([])
     setInitialLoading(true)
@@ -348,7 +353,6 @@ const ProductsGrid = () => {
         }
 
         let sort_by = "published_at:desc"
-
         switch (sortOption) {
           case "price_asc":
             sort_by = "content.price:asc"
@@ -364,10 +368,8 @@ const ProductsGrid = () => {
         }
 
         const cacheKey = `${sortOption}-${selectedCategory || "all"}-${pageNum}`
-
         if (responseCache.current[cacheKey]) {
           const cachedData = responseCache.current[cacheKey]
-
           if (pageNum === 1) {
             setProducts(cachedData.products)
             setTotalProducts(cachedData.total)
@@ -383,7 +385,6 @@ const ProductsGrid = () => {
               return newProducts
             })
           }
-
           setInitialLoading(false)
           setLoading(false)
           setFetchingLock(false)
@@ -483,7 +484,6 @@ const ProductsGrid = () => {
             })}`,
           )
           const data = await response.json()
-
           const formattedProducts = data.stories.map((story) => {
             const content = story.content
             return {
@@ -491,7 +491,6 @@ const ProductsGrid = () => {
               category: content.category || "sin-categoria",
             }
           })
-
           setCategories(extractCategories(formattedProducts))
         }
       } catch (err) {
@@ -515,9 +514,7 @@ const ProductsGrid = () => {
   const lastProductRef = useCallback(
     (node) => {
       if (initialLoading || loading) return
-
       if (observer.current) observer.current.disconnect()
-
       observer.current = new IntersectionObserver(
         (entries) => {
           if (entries[0].isIntersecting && hasMore && !fetchingLock) {
@@ -531,7 +528,6 @@ const ProductsGrid = () => {
           threshold: 0.1,
         },
       )
-
       if (node) observer.current.observe(node)
     },
     [initialLoading, loading, hasMore, fetchingLock],
@@ -568,7 +564,6 @@ const ProductsGrid = () => {
       notification.textContent = message
       notification.className =
         "fixed top-4 right-4 bg-gradient-to-r from-teal-600 to-teal-700 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] opacity-0 transform translate-x-4 transition-all duration-500 max-w-sm"
-
       document.body.appendChild(notification)
 
       setTimeout(() => {
@@ -606,9 +601,7 @@ const ProductsGrid = () => {
     const handleAddToCart = async (e) => {
       e.preventDefault()
       e.stopPropagation()
-
       setIsAdding(true)
-
       setTimeout(() => {
         addToCart(product)
         setIsAdding(false)
@@ -619,7 +612,7 @@ const ProductsGrid = () => {
       <button
         onClick={handleAddToCart}
         disabled={isAdding}
-        className={`bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 flex items-center justify-center transform hover:scale-105 hover:shadow-lg active:scale-95 disabled:opacity-70 ${className}`}
+        className={`bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 flex items-center justify-center transform hover:scale-105 hover:shadow-lg active:scale-95 disabled:opacity-70 cursor-pointer ${className}`}
       >
         <ShoppingCart className={`h-4 w-4 mr-2 transition-transform duration-300 ${isAdding ? "animate-spin" : ""}`} />
         {isAdding ? "Agregando..." : "Agregar al Carrito"}
@@ -668,14 +661,12 @@ const ProductsGrid = () => {
                     </div>
                   )}
                 </div>
-
                 <div className="p-4">
                   <div className="block">
                     <h3 className="font-medium text-gray-900 group-hover:text-teal-600 transition-colors mb-2 line-clamp-2 h-12">
                       {product.name}
                     </h3>
                   </div>
-
                   <div className="flex items-center justify-between mt-4">
                     <div>
                       {product.on_sale ? (
@@ -690,7 +681,6 @@ const ProductsGrid = () => {
                   </div>
                 </div>
               </a>
-
               {isAuthenticated && (
                 <div className="p-4 pt-0">
                   <AddToCartButton product={product} className="w-full" />
@@ -709,21 +699,19 @@ const ProductsGrid = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900">Nuestros Productos</h2>
-
             {isAuthenticated && (
               <div className="flex items-center gap-3">
                 <button
                   onClick={openPurchaseHistory}
-                  className="relative inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="relative inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
                 >
                   <Package className="h-5 w-5 mr-2" />
                   <span>Mis Compras</span>
                 </button>
-
                 <button
                   id="cart-button"
                   onClick={openCart}
-                  className="relative inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="relative inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
                 >
                   <ShoppingCart className="h-5 w-5 transition-transform duration-200" />
                   {getTotalItems() > 0 && (
@@ -738,8 +726,8 @@ const ProductsGrid = () => {
 
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className={`w-full lg:w-64 ${showFilters ? "block" : "hidden"} lg:block`}>
-              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
-                <div className="mb-6">
+              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4 space-y-6">
+                <div>
                   <h3 className="font-semibold text-lg mb-3">Categorías</h3>
                   {categories.length > 0 ? (
                     <ul className="space-y-2">
@@ -747,14 +735,22 @@ const ProductsGrid = () => {
                         <li key={index}>
                           <button
                             onClick={() => handleCategoryClick(category.name)}
-                            className={`flex items-center justify-between w-full text-left ${
+                            className={`flex items-center justify-between w-full text-left p-2 rounded-md transition-all duration-200 cursor-pointer ${
                               selectedCategory === category.name
-                                ? "text-teal-600 font-medium"
-                                : "text-gray-600 hover:text-teal-600"
-                            } transition-colors`}
+                                ? "bg-teal-100 text-teal-700 font-medium shadow-sm"
+                                : "text-gray-600 hover:text-teal-600 hover:bg-gray-50"
+                            }`}
                           >
                             <span>{category.name}</span>
-                            <span className="text-xs bg-gray-100 rounded-full px-2 py-1">{category.count}</span>
+                            <span
+                              className={`text-xs rounded-full px-2 py-1 ${
+                                selectedCategory === category.name
+                                  ? "bg-teal-200 text-teal-800"
+                                  : "bg-gray-100 text-gray-600"
+                              }`}
+                            >
+                              {category.count}
+                            </span>
                           </button>
                         </li>
                       ))}
@@ -763,19 +759,31 @@ const ProductsGrid = () => {
                     <p className="text-gray-500 text-sm">Cargando categorías...</p>
                   )}
                 </div>
+
                 {selectedCategory && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Filtro activo:</span>
-                      <button
-                        onClick={() => handleCategoryClick(selectedCategory)}
-                        className="text-xs text-red-500 hover:text-red-700"
-                      >
-                        Limpiar
-                      </button>
-                    </div>
-                    <div className="mt-2 inline-flex items-center bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-sm">
-                      {selectedCategory}
+                  <div className="pt-4 border-t border-gray-200">
+                    <button
+                      onClick={clearAllFilters}
+                      className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2 px-4 rounded-md transition-all duration-200 cursor-pointer transform hover:scale-105"
+                    >
+                      Limpiar filtros
+                    </button>
+                  </div>
+                )}
+
+                {selectedCategory && (
+                  <div className="pt-4 border-t border-gray-200">
+                    <h4 className="font-medium text-gray-900 mb-2">Filtros activos:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-flex items-center bg-teal-100 text-teal-700 px-2 py-1 rounded-full text-xs">
+                        {selectedCategory}
+                        <button
+                          onClick={() => handleCategoryClick(selectedCategory)}
+                          className="ml-1 hover:text-teal-900 cursor-pointer"
+                        >
+                          ×
+                        </button>
+                      </span>
                     </div>
                   </div>
                 )}
@@ -784,44 +792,42 @@ const ProductsGrid = () => {
 
             <div className="lg:hidden mb-4 flex justify-between items-center">
               <button
-                className="flex items-center gap-2 bg-white rounded-lg px-4 py-2 shadow-sm text-gray-700"
+                className="flex items-center gap-2 bg-white rounded-lg px-4 py-2 shadow-sm text-gray-700 cursor-pointer"
                 onClick={toggleFilters}
               >
                 <SlidersHorizontal className="w-5 h-5" />
                 <span>Filtros</span>
               </button>
-
               <div className="relative sort-dropdown-container">
                 <button
-                  className="flex items-center gap-2 bg-white rounded-lg px-4 py-2 shadow-sm text-gray-700"
+                  className="flex items-center gap-2 bg-white rounded-lg px-4 py-2 shadow-sm text-gray-700 cursor-pointer"
                   onClick={() => setShowSortOptions(!showSortOptions)}
                 >
                   <ArrowUpDown className="w-5 h-5" />
                   <span>Ordenar</span>
                 </button>
-
                 {showSortOptions && (
                   <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg z-10 py-2">
                     <button
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 ${sortOption === "relevance" ? "text-teal-600 font-medium" : "text-gray-700"}`}
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer ${sortOption === "relevance" ? "text-teal-600 font-medium" : "text-gray-700"}`}
                       onClick={() => handleSort("relevance")}
                     >
                       Más relevantes
                     </button>
                     <button
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 ${sortOption === "price_asc" ? "text-teal-600 font-medium" : "text-gray-700"}`}
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer ${sortOption === "price_asc" ? "text-teal-600 font-medium" : "text-gray-700"}`}
                       onClick={() => handleSort("price_asc")}
                     >
                       Precio: menor a mayor
                     </button>
                     <button
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 ${sortOption === "price_desc" ? "text-teal-600 font-medium" : "text-gray-700"}`}
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer ${sortOption === "price_desc" ? "text-teal-600 font-medium" : "text-gray-700"}`}
                       onClick={() => handleSort("price_desc")}
                     >
                       Precio: mayor a menor
                     </button>
                     <button
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 ${sortOption === "date" ? "text-teal-600 font-medium" : "text-gray-700"}`}
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer ${sortOption === "date" ? "text-teal-600 font-medium" : "text-gray-700"}`}
                       onClick={() => handleSort("date")}
                     >
                       Más recientes
@@ -849,7 +855,6 @@ const ProductsGrid = () => {
                     </span>
                   )}
                 </div>
-
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <label htmlFor="sort" className="text-sm text-gray-500">
@@ -858,7 +863,7 @@ const ProductsGrid = () => {
                     <div className="relative">
                       <select
                         id="sort"
-                        className="appearance-none bg-gray-50 border border-gray-200 rounded-md pl-3 pr-8 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        className="appearance-none bg-gray-50 border border-gray-200 rounded-md pl-3 pr-8 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
                         value={sortOption}
                         onChange={(e) => handleSort(e.target.value)}
                       >
@@ -898,13 +903,11 @@ const ProductsGrid = () => {
               ) : (
                 <>
                   {productGrid}
-
                   {loading && (
                     <div className="flex justify-center items-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-teal-600"></div>
                     </div>
                   )}
-
                   {!loading && !error && products.length === 0 && (
                     <div className="text-center py-12">
                       <p className="text-gray-500 mb-4">
@@ -913,7 +916,7 @@ const ProductsGrid = () => {
                       {selectedCategory && (
                         <button
                           onClick={() => handleCategoryClick(selectedCategory)}
-                          className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md transition-colors"
+                          className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md transition-colors cursor-pointer"
                         >
                           Limpiar filtros
                         </button>
@@ -933,7 +936,6 @@ const ProductsGrid = () => {
                 ${isPurchaseHistoryAnimating ? "backdrop-blur-sm opacity-100" : "backdrop-blur-none opacity-0"}`}
               onClick={closePurchaseHistory}
             ></div>
-
             <div
               className={`absolute right-0 top-0 h-full w-full max-w-4xl bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
                 isPurchaseHistoryAnimating ? "translate-x-0" : "translate-x-full"
@@ -951,7 +953,7 @@ const ProductsGrid = () => {
                   </div>
                   <button
                     onClick={closePurchaseHistory}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200 hover:rotate-90 transform"
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200 hover:rotate-90 transform cursor-pointer"
                   >
                     <X className="h-6 w-6" />
                   </button>
@@ -961,10 +963,9 @@ const ProductsGrid = () => {
                   {loadingPurchases ? (
                     <div className="flex flex-col items-center justify-center h-full">
                       <div className="relative w-12 h-12 flex items-center justify-center mb-4">
-                          <div className="absolute inline-block w-full h-full rounded-full border-4 border-teal-200"></div>
-                          <div className="inline-block w-full h-full animate-spin rounded-full border-4 border-teal-600 border-t-transparent"></div>
+                        <div className="absolute inline-block w-full h-full rounded-full border-4 border-teal-200"></div>
+                        <div className="inline-block w-full h-full animate-spin rounded-full border-4 border-teal-600 border-t-transparent"></div>
                       </div>
-
                       <p className="text-gray-500">Cargando historial de compras...</p>
                     </div>
                   ) : purchaseError ? (
@@ -976,7 +977,7 @@ const ProductsGrid = () => {
                       <p className="text-gray-500 mb-4">{purchaseError}</p>
                       <button
                         onClick={fetchPurchaseHistory}
-                        className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md transition-colors"
+                        className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md transition-colors cursor-pointer"
                       >
                         Reintentar
                       </button>
@@ -996,7 +997,6 @@ const ProductsGrid = () => {
                           key={purchase.order_id || index}
                           className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-6 border border-gray-200 hover:shadow-md transition-shadow"
                         >
-
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 pb-4 border-b border-gray-200">
                             <div className="flex items-center space-x-3 mb-2 sm:mb-0">
                               <div className="bg-teal-100 p-2 rounded-full">
@@ -1019,16 +1019,16 @@ const ProductsGrid = () => {
                                   className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                                     purchase.stripe.stripe_status === "paid"
                                       ? "bg-green-100 text-green-800"
-                                      : "bg-yellow-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
                                   }`}
                                 >
                                   <CreditCard className="h-3 w-3 mr-1" />
-                                      {purchase.stripe.stripe_status === "paid"
-                                        ? "Pagado"
-                                        : purchase.stripe.stripe_status === "unpaid"
-                                        ? "Sin pagar"
-                                        : "No procesado"}
-                                    </span>
+                                  {purchase.stripe.stripe_status === "paid"
+                                    ? "Pagado"
+                                    : purchase.stripe.stripe_status === "unpaid"
+                                      ? "Cancelado"
+                                      : "No procesado"}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -1042,7 +1042,6 @@ const ProductsGrid = () => {
                               <p className="text-sm text-gray-600">{purchase.usuario}</p>
                               <p className="text-sm text-gray-500">{purchase.correo}</p>
                             </div>
-
                             {purchase.stripe && (
                               <div className="bg-white p-3 rounded-lg">
                                 <h4 className="font-medium text-gray-900 mb-2 flex items-center">
@@ -1050,8 +1049,7 @@ const ProductsGrid = () => {
                                   Información de Pago
                                 </h4>
                                 <p className="text-sm text-gray-600">
-                                  Total:{" "}
-                                  {formatCurrency(purchase.stripe.stripe_total, purchase.stripe.stripe_currency)}
+                                  Total: {formatCurrency(purchase.stripe.stripe_total, purchase.stripe.stripe_currency)}
                                 </p>
                                 {purchase.stripe.stripe_payment_intent && (
                                   <p className="text-xs text-gray-500 font-mono">
@@ -1061,6 +1059,29 @@ const ProductsGrid = () => {
                               </div>
                             )}
                           </div>
+
+                          {purchase.invoice_url && (
+                            <div className="bg-white rounded-lg p-4 mb-4 border border-blue-100">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <div className="bg-blue-100 p-2 rounded-full mr-3">
+                                    <FileText className="h-4 w-4 text-blue-600" />
+                                  </div>
+                                  <div>
+                                    <h4 className="font-medium text-gray-900">Factura Disponible</h4>
+                                    <p className="text-sm text-gray-500">Descarga o visualiza tu factura</p>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleViewInvoice(purchase.invoice_url)}
+                                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 transform hover:scale-105 cursor-pointer"
+                                >
+                                  <ExternalLink className="h-4 w-4 mr-2" />
+                                  Ver Factura
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           {purchase.items && purchase.items.length > 0 && (
                             <div className="bg-white rounded-lg p-4">
@@ -1099,13 +1120,13 @@ const ProductsGrid = () => {
                     <button
                       onClick={fetchPurchaseHistory}
                       disabled={loadingPurchases}
-                      className="text-teal-600 hover:text-teal-700 font-medium disabled:opacity-50"
+                      className="text-teal-600 hover:text-teal-700 font-medium disabled:opacity-50 cursor-pointer"
                     >
                       {loadingPurchases ? "Actualizando..." : "Actualizar"}
                     </button>
                     <button
                       onClick={closePurchaseHistory}
-                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition-colors"
+                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition-colors cursor-pointer"
                     >
                       Cerrar
                     </button>
@@ -1123,7 +1144,6 @@ const ProductsGrid = () => {
                 ${isCartAnimating ? "backdrop-blur-sm opacity-100" : "backdrop-blur-none opacity-0"}`}
               onClick={closeCart}
             ></div>
-
             <div
               className={`absolute right-0 top-0 h-full w-full max-w-lg bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
                 isCartAnimating ? "translate-x-0" : "translate-x-full"
@@ -1141,7 +1161,7 @@ const ProductsGrid = () => {
                   </div>
                   <button
                     onClick={closeCart}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200 hover:rotate-90 transform"
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200 hover:rotate-90 transform cursor-pointer"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -1174,7 +1194,6 @@ const ProductsGrid = () => {
                               }}
                             />
                           </div>
-
                           <div className="flex-1 min-w-0">
                             <h4 className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight">
                               {item.name}
@@ -1182,35 +1201,30 @@ const ProductsGrid = () => {
                             {item.category && <p className="text-xs text-gray-500 mt-1 capitalize">{item.category}</p>}
                             <div className="flex items-center justify-between mt-2">
                               <p className="text-sm font-semibold text-teal-600">${item.price}</p>
-
                               <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                  className="h-7 w-7 flex items-center justify-center border border-gray-300 rounded-full hover:bg-red-50 hover:border-red-300 text-gray-600 hover:text-red-600 transition-all duration-200 transform hover:scale-110"
+                                  className="h-7 w-7 flex items-center justify-center border border-gray-300 rounded-full hover:bg-red-50 hover:border-red-300 text-gray-600 hover:text-red-600 transition-all duration-200 transform hover:scale-110 cursor-pointer"
                                 >
                                   <Minus className="h-3 w-3" />
                                 </button>
-
                                 <span className="text-sm font-medium w-6 text-center bg-white rounded px-2 py-1 shadow-sm">
                                   {item.quantity}
                                 </span>
-
                                 <button
                                   onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                  className="h-7 w-7 flex items-center justify-center border border-gray-300 rounded-full hover:bg-teal-50 hover:border-teal-300 text-gray-600 hover:text-teal-600 transition-all duration-200 transform hover:scale-110"
+                                  className="h-7 w-7 flex items-center justify-center border border-gray-300 rounded-full hover:bg-teal-50 hover:border-teal-300 text-gray-600 hover:text-teal-600 transition-all duration-200 transform hover:scale-110 cursor-pointer"
                                 >
                                   <Plus className="h-3 w-3" />
                                 </button>
-
                                 <button
                                   onClick={() => removeFromCart(item.id)}
-                                  className="h-7 w-7 flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full ml-2 transition-all duration-200 transform hover:scale-110 hover:rotate-12"
+                                  className="h-7 w-7 flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full ml-2 transition-all duration-200 transform hover:scale-110 hover:rotate-12 cursor-pointer"
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </button>
                               </div>
                             </div>
-
                             <div className="mt-1">
                               <p className="text-xs text-gray-500">
                                 Subtotal: $
@@ -1236,7 +1250,6 @@ const ProductsGrid = () => {
                         ${getTotalPrice().toFixed(2)}
                       </span>
                     </div>
-
                     <div className="space-y-2">
                       <button
                         onClick={handleCheckout}
@@ -1257,11 +1270,10 @@ const ProductsGrid = () => {
                           )}
                         </span>
                       </button>
-
                       <button
                         onClick={clearCart}
                         disabled={isProcessingPayment}
-                        className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
                       >
                         Vaciar Carrito
                       </button>

@@ -106,7 +106,7 @@ export default function Header() {
     if (
       normalizedCurrent === normalizedTarget ||
       (normalizedCurrent.includes("/admin/usuarios") && normalizedTarget.includes("/admin/usuarios")) ||
-      (normalizedCurrent.includes("/admin/ordenes") && normalizedTarget.includes("/admin/ordenes"))
+      (normalizedCurrent.includes("/admin/ordenes") && normalizedTarget.includes("/admin/ordenes")) || (normalizedCurrent.includes("/admin/subida-producto") && normalizedTarget.includes("/admin/subida-producto"))
     ) {
       e.preventDefault()
       return false
@@ -122,7 +122,8 @@ export default function Header() {
     return (
       normalizedCurrent === normalizedTarget ||
       (normalizedCurrent.includes("/admin/usuarios") && normalizedTarget.includes("/admin/usuarios")) ||
-      (normalizedCurrent.includes("/admin/ordenes") && normalizedTarget.includes("/admin/ordenes"))
+      (normalizedCurrent.includes("/admin/ordenes") && normalizedTarget.includes("/admin/ordenes")) || (normalizedCurrent.includes("/admin/subida-producto") && normalizedTarget.includes("/admin/subida-producto"))
+      
     )
   }
 
@@ -189,6 +190,18 @@ export default function Header() {
               onClick={(e) => handleNavigation("/admin/ordenes", e)}
             >
               Ordenes
+            </a>
+
+            <a
+              href="/admin/subida-producto"
+              className={`font-medium transition-colors ${
+                isActiveRoute("/admin/subida-producto")
+                  ? "text-teal-600 cursor-default"
+                  : "text-gray-600 hover:text-teal-600 cursor-pointer"
+              }`}
+              onClick={(e) => handleNavigation("/admin/subida-producto", e)}
+            >
+              Subida de productos
             </a>
           </nav>
 
@@ -281,6 +294,20 @@ export default function Header() {
             }}
           >
             Ordenes
+          </a>
+
+          <a
+            href="/admin/subida-producto"
+            className={`block font-medium py-2 transition-colors ${
+              isActiveRoute("/admin/subida-productos") ? "text-teal-600 cursor-default" : "text-gray-600 hover:text-teal-600"
+            }`}
+            onClick={(e) => {
+              if (handleNavigation("/admin/subida-productos", e)) {
+                setIsMenuOpen(false)
+              }
+            }}
+          >
+            Subida de productos
           </a>
 
           <div className="pt-2 border-t border-gray-200">
