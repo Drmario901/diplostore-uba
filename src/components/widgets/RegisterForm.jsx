@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { User, Mail, Lock, UserPlus, Eye, EyeOff, UserCheck } from "lucide-react"
+import { useState, useEffect } from "react"
+import { User, Mail, Lock, UserPlus, Eye, EyeOff, UserCheck, Check, X } from "lucide-react"
 import axios from "axios"
 import Swal from "sweetalert2"
 import "sweetalert2/dist/sweetalert2.css"
@@ -15,17 +15,75 @@ const RegisterForm = () => {
     confirmPassword: "",
     terms: false,
   })
+
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    feedback: [],
+  })
+
   //const endpointLocal = "http://localhost/diplo-store-api/register";
-   const endpointProduction = "https://diplostore.fwh.is/diplo-store-api/register";
+  const endpointProduction = "https://diplostore.fwh.is/diplo-store-api/register"
+
+  const checkPasswordStrength = (password) => {
+    const feedback = []
+    let score = 0
+
+    if (password.length >= 8) {
+      score += 1
+      feedback.push({ text: "Al menos 8 caracteres", valid: true })
+    } else {
+      feedback.push({ text: "Al menos 8 caracteres", valid: false })
+    }
+
+    if (/[a-z]/.test(password)) {
+      score += 1
+      feedback.push({ text: "Contiene minúsculas", valid: true })
+    } else {
+      feedback.push({ text: "Contiene minúsculas", valid: false })
+    }
+
+    if (/[A-Z]/.test(password)) {
+      score += 1
+      feedback.push({ text: "Contiene mayúsculas", valid: true })
+    } else {
+      feedback.push({ text: "Contiene mayúsculas", valid: false })
+    }
+
+    if (/\d/.test(password)) {
+      score += 1
+      feedback.push({ text: "Contiene números", valid: true })
+    } else {
+      feedback.push({ text: "Contiene números", valid: false })
+    }
+
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      score += 1
+      feedback.push({ text: "Contiene símbolos", valid: true })
+    } else {
+      feedback.push({ text: "Contiene símbolos", valid: false })
+    }
+
+    return { score, feedback }
+  }
+
+  useEffect(() => {
+    if (formData.password) {
+      const strength = checkPasswordStrength(formData.password)
+      setPasswordStrength(strength)
+    }
+  }, [formData.password])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
+    const newValue = type === "checkbox" ? checked : value
+
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: newValue,
     })
 
     if (errors[name]) {
@@ -34,6 +92,23 @@ const RegisterForm = () => {
         [name]: "",
       })
     }
+
+    if (name === "confirmPassword" || (name === "password" && formData.confirmPassword)) {
+      const password = name === "password" ? newValue : formData.password
+      const confirmPassword = name === "confirmPassword" ? newValue : formData.confirmPassword
+
+      if (confirmPassword && password !== confirmPassword) {
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: "Las contraseñas no coinciden",
+        }))
+      } else if (password === confirmPassword && confirmPassword) {
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: "",
+        }))
+      }
+    }
   }
 
   const validateForm = () => {
@@ -41,25 +116,40 @@ const RegisterForm = () => {
 
     if (!formData.first_name.trim()) {
       newErrors.first_name = "El nombre es obligatorio"
+    } else if (formData.first_name.trim().length < 2) {
+      newErrors.first_name = "El nombre debe tener al menos 2 caracteres"
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.first_name.trim())) {
+      newErrors.first_name = "El nombre solo puede contener letras"
     }
 
     if (!formData.last_name.trim()) {
       newErrors.last_name = "El apellido es obligatorio"
+    } else if (formData.last_name.trim().length < 2) {
+      newErrors.last_name = "El apellido debe tener al menos 2 caracteres"
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.last_name.trim())) {
+      newErrors.last_name = "El apellido solo puede contener letras"
     }
 
     if (!formData.email) {
       newErrors.email = "El correo electrónico es obligatorio"
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Formato de correo electrónico inválido"
+    } else if (formData.email.length > 254) {
+      newErrors.email = "El correo electrónico es demasiado largo"
     }
 
     if (!formData.password) {
       newErrors.password = "La contraseña es obligatoria"
-    } else if (formData.password.length < 6) {
-      newErrors.password = "La contraseña debe tener al menos 6 caracteres"
+    } else {
+      const strength = checkPasswordStrength(formData.password)
+      if (strength.score < 3) {
+        newErrors.password = "La contraseña debe ser más segura (mínimo 3 de 5 criterios)"
+      }
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Debes confirmar tu contraseña"
+    } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Las contraseñas no coinciden"
     }
 
@@ -88,9 +178,9 @@ const RegisterForm = () => {
 
     try {
       const registerData = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        email: formData.email,
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        email: formData.email.toLowerCase().trim(),
         password: formData.password,
       }
 
@@ -104,13 +194,18 @@ const RegisterForm = () => {
         if (response.data && response.data.token) {
           localStorage.setItem("auth_token", response.data.token)
 
+          if (response.data.user) {
+            localStorage.setItem("user_data", JSON.stringify(response.data.user))
+            localStorage.setItem("cached_token", response.data.token)
+          }
+
           Swal.fire({
             icon: "success",
             title: "¡Registro exitoso!",
             text: "Tu cuenta ha sido creada correctamente",
             confirmButtonColor: "#0d9488",
           }).then(() => {
-            window.location.href = '/'
+            window.location.href = "/productos"
           })
         } else {
           Swal.fire({
@@ -122,16 +217,11 @@ const RegisterForm = () => {
             window.location.href = "/login"
           })
         }
-
-        if (response.data && response.data.user) {
-          localStorage.setItem("user", JSON.stringify(response.data.user))
-        }
       } else {
         throw new Error("Respuesta inesperada del servidor")
       }
     } catch (error) {
       console.error("Registration error:", error)
-
       let errorMsg = "Ocurrió un error al intentar registrarte"
 
       if (error.response) {
@@ -139,6 +229,8 @@ const RegisterForm = () => {
           errorMsg = error.response.data.message
         } else if (error.response.status === 422) {
           errorMsg = "El correo electrónico ya está registrado"
+        } else if (error.response.status === 400) {
+          errorMsg = "Datos inválidos. Verifica la información ingresada"
         }
       } else if (error.request) {
         errorMsg = "No se pudo conectar con el servidor. Verifica tu conexión a internet."
@@ -155,6 +247,18 @@ const RegisterForm = () => {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const getPasswordStrengthColor = () => {
+    if (passwordStrength.score <= 2) return "bg-red-500"
+    if (passwordStrength.score <= 3) return "bg-yellow-500"
+    return "bg-green-500"
+  }
+
+  const getPasswordStrengthText = () => {
+    if (passwordStrength.score <= 2) return "Débil"
+    if (passwordStrength.score <= 3) return "Media"
+    return "Fuerte"
   }
 
   return (
@@ -258,7 +362,7 @@ const RegisterForm = () => {
                 className={`block w-full pl-10 pr-10 py-3 border ${
                   errors.password ? "border-red-500" : "border-gray-300"
                 } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500`}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Crea una contraseña segura"
               />
               <button
                 type="button"
@@ -272,6 +376,44 @@ const RegisterForm = () => {
                 )}
               </button>
             </div>
+
+            {formData.password && (
+              <div className="mt-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-600">Fortaleza de contraseña:</span>
+                  <span
+                    className={`text-xs font-medium ${
+                      passwordStrength.score <= 2
+                        ? "text-red-600"
+                        : passwordStrength.score <= 3
+                          ? "text-yellow-600"
+                          : "text-green-600"
+                    }`}
+                  >
+                    {getPasswordStrengthText()}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor()}`}
+                    style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="mt-2 space-y-1">
+                  {passwordStrength.feedback.map((item, index) => (
+                    <div key={index} className="flex items-center text-xs">
+                      {item.valid ? (
+                        <Check className="h-3 w-3 text-green-500 mr-1" />
+                      ) : (
+                        <X className="h-3 w-3 text-red-500 mr-1" />
+                      )}
+                      <span className={item.valid ? "text-green-600" : "text-red-600"}>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
           </div>
 
@@ -286,15 +428,36 @@ const RegisterForm = () => {
               <input
                 id="confirmPassword"
                 name="confirmPassword"
-                type={showPassword ? "text" : "password"}
+                type={showConfirmPassword ? "text" : "password"}
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className={`block w-full pl-10 pr-3 py-3 border ${
-                  errors.confirmPassword ? "border-red-500" : "border-gray-300"
+                className={`block w-full pl-10 pr-10 py-3 border ${
+                  errors.confirmPassword
+                    ? "border-red-500"
+                    : formData.confirmPassword && formData.password === formData.confirmPassword
+                      ? "border-green-500"
+                      : "border-gray-300"
                 } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500`}
                 placeholder="Repite tu contraseña"
               />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-400" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-400" />
+                )}
+              </button>
             </div>
+            {formData.confirmPassword && formData.password === formData.confirmPassword && (
+              <p className="mt-1 text-sm text-green-600 flex items-center">
+                <Check className="h-4 w-4 mr-1" />
+                Las contraseñas coinciden
+              </p>
+            )}
             {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
           </div>
 
@@ -316,11 +479,7 @@ const RegisterForm = () => {
                 Acepto los{" "}
                 <a href="/terminos" className="text-teal-600 hover:text-teal-500">
                   términos y condiciones
-                </a>{" "}
-                {/* y la{" "}
-                <a href="/privacidad" className="text-teal-600 hover:text-teal-500">
-                  política de privacidad
-                </a> */}
+                </a>
               </label>
               {errors.terms && <p className="mt-1 text-sm text-red-600">{errors.terms}</p>}
             </div>

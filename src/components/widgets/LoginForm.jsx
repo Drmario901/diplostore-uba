@@ -122,12 +122,12 @@ const LoginForm = () => {
         errorMsg = error.message
       }
 
-      Swal.fire({
-        icon: "error",
-        title: "Error de inicio de sesión",
-        text: errorMsg,
-        confirmButtonColor: "#0d9488",
-      })
+      // Swal.fire({
+      //   icon: "error",
+      //   title: "Error de inicio de sesión",
+      //   text: errorMsg,
+      //   confirmButtonColor: "#0d9488",
+      // })
 
       setLoginError(errorMsg)
     } finally {

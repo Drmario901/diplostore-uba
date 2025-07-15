@@ -25,10 +25,24 @@ export default function Header() {
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("auth_token")
-
       if (!token) {
         setIsLoading(false)
         return
+      }
+
+      const cachedUserData = localStorage.getItem("user_data")
+      const cachedToken = localStorage.getItem("cached_token")
+
+      if (cachedUserData && cachedToken === token) {
+        try {
+          const parsedUserData = JSON.parse(cachedUserData)
+          console.log("Using cached user data:", parsedUserData)
+          setUserData(parsedUserData)
+          setIsLoading(false)
+          return
+        } catch (err) {
+          console.error(err)
+        }
       }
 
       try {
@@ -44,8 +58,10 @@ export default function Header() {
           },
         )
 
-        console.log("User data response:", response.data)
         setUserData(response.data)
+        localStorage.setItem("user_data", JSON.stringify(response.data))
+        localStorage.setItem("cached_token", token)
+
         setIsLoading(false)
       } catch (err) {
         console.error("Error fetching user data:", err)
@@ -54,7 +70,11 @@ export default function Header() {
 
         if (err.response && (err.response.status === 401 || err.response.status === 403)) {
           console.log("Token inválido o expirado, cerrando sesión")
+          // Limpiar todos los datos almacenados
           localStorage.removeItem("auth_token")
+          localStorage.removeItem("user_data")
+          localStorage.removeItem("cached_token")
+          setUserData(null)
         }
       }
     }
@@ -86,12 +106,14 @@ export default function Header() {
         })
 
         localStorage.removeItem("auth_token")
+        localStorage.removeItem("user_data")
+        localStorage.removeItem("cached_token")
         setUserData(null)
         setIsMenuOpen(false)
         window.location.href = "/"
       }
     } catch (error) {
-      console.error("Error during logout:", error)
+      console.error(error)
     }
   }
 
@@ -111,7 +133,6 @@ export default function Header() {
       e.preventDefault()
       return false
     }
-
     return true
   }
 
@@ -150,7 +171,6 @@ export default function Header() {
     }
 
     window.addEventListener("resize", handleResize)
-
     return () => {
       window.removeEventListener("resize", handleResize)
     }
@@ -188,35 +208,24 @@ export default function Header() {
             >
               Productos
             </a>
-            {/* <a
-              href="/contacto"
-              className={`font-medium transition-colors ${
-                isActiveRoute("/contacto")
-                  ? "text-teal-600 cursor-default"
-                  : "text-gray-600 hover:text-teal-600 cursor-pointer"
-              }`}
-              onClick={(e) => handleNavigation("/contacto", e)}
-            >
-              Contacto
-            </a> */}
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
             {isLoading ? (
-              <div className="h-9 w-24 bg-gray-200 animate-pulse rounded-md"></div>
+              <div className="h-9 w-32 bg-gray-200 animate-pulse rounded-md"></div>
             ) : isAuthenticated ? (
               <div className="flex items-center space-x-4">
                 <div className="flex items-center">
                   <div className="bg-teal-100 rounded-full p-1.5">
                     <User className="h-4 w-4 text-teal-600" />
                   </div>
-                  <span className="ml-2 text-sm font-medium text-gray-700">
-                    {userData ? userData.first_name : "Usuario"}
+                  <span className="ml-2 text-sm font-medium text-gray-700 whitespace-nowrap">
+                    {userData ? `${userData.first_name} ${userData.last_name}` : "Usuario"}
                   </span>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center bg-gray-100 hover:bg-gray-200 text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="flex items-center bg-gray-100 hover:bg-gray-200 text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap"
                 >
                   <LogOut className="h-4 w-4 mr-1" />
                   Cerrar sesión
@@ -226,7 +235,7 @@ export default function Header() {
               <>
                 <a
                   href="/login"
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                     isActiveRoute("/login")
                       ? "bg-teal-700 text-white cursor-default"
                       : "bg-teal-600 hover:bg-teal-700 text-white"
@@ -237,7 +246,7 @@ export default function Header() {
                 </a>
                 <a
                   href="/registro"
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                     isActiveRoute("/registro")
                       ? "bg-gray-200 text-teal-700 cursor-default"
                       : "bg-gray-100 hover:bg-gray-200 text-teal-600"
@@ -291,19 +300,6 @@ export default function Header() {
           >
             Productos
           </a>
-          {/* <a
-            href="/contacto"
-            className={`block font-medium py-2 transition-colors ${
-              isActiveRoute("/contacto") ? "text-teal-600 cursor-default" : "text-gray-600 hover:text-teal-600"
-            }`}
-            onClick={(e) => {
-              if (handleNavigation("/contacto", e)) {
-                setIsMenuOpen(false)
-              }
-            }}
-          >
-            Contacto
-          </a> */}
 
           <div className="pt-2 border-t border-gray-200">
             {isLoading ? (

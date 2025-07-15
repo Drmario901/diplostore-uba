@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css'
-import Header from '../components/widgets/Header'
+import Header from '../components/widgets/Header.jsx'
 import Footer from '../components/widgets/Footer.astro'
 import { ClientRouter } from 'astro:transitions';
 const { title = "Diplostore" } = Astro.props;
@@ -17,7 +17,7 @@ const { title = "Diplostore" } = Astro.props;
 		<title>{title}</title>
 	</head>
 	<body>
-		<Header client:only="react"/>
+		<Header client:load/>
 		<slot />
 		<Footer />
 	</body>
