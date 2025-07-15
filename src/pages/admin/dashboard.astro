@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/admin/Layout.astro';
+import EcommerceDashboard from '../../components/widgets/admin/Dashboard.tsx';
+import AdminGuard from '../../components/widgets/admin/AdminGuard.jsx';
+---
+
+<Layout title="Dashboard">
+  <AdminGuard client:load>
+    <EcommerceDashboard client:load />
+  </AdminGuard>
+</Layout>

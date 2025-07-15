@@ -105,6 +105,7 @@ export default function Header() {
 
     if (
       normalizedCurrent === normalizedTarget ||
+      (normalizedCurrent.includes("/admin/dashboard") && normalizedTarget.includes("/admin/dashboard")) ||
       (normalizedCurrent.includes("/admin/usuarios") && normalizedTarget.includes("/admin/usuarios")) ||
       (normalizedCurrent.includes("/admin/ordenes") && normalizedTarget.includes("/admin/ordenes")) || (normalizedCurrent.includes("/admin/subida-producto") && normalizedTarget.includes("/admin/subida-producto"))
     ) {
@@ -121,6 +122,7 @@ export default function Header() {
 
     return (
       normalizedCurrent === normalizedTarget ||
+      (normalizedCurrent.includes("/admin/dashboard") && normalizedTarget.includes("/admin/dashboard")) ||
       (normalizedCurrent.includes("/admin/usuarios") && normalizedTarget.includes("/admin/usuarios")) ||
       (normalizedCurrent.includes("/admin/ordenes") && normalizedTarget.includes("/admin/ordenes")) || (normalizedCurrent.includes("/admin/subida-producto") && normalizedTarget.includes("/admin/subida-producto"))
       
@@ -169,6 +171,17 @@ export default function Header() {
           </a>
 
           <nav className="hidden md:flex items-center space-x-8">
+            <a
+              href="/admin/dashboard"
+              className={`font-medium transition-colors ${
+                isActiveRoute("/admin/dashboard")
+                  ? "text-teal-600 cursor-default"
+                  : "text-gray-600 hover:text-teal-600 cursor-pointer"
+              }`}
+              onClick={(e) => handleNavigation("/admin/dashboard", e)}
+            >
+              Dashboard 
+            </a>
             <a
               href="/admin/usuarios"
               className={`font-medium transition-colors ${
@@ -269,6 +282,19 @@ export default function Header() {
 
       <div id="mobile-menu" className={`md:hidden ${isMenuOpen ? "block" : "hidden"} border-t border-gray-200`}>
         <div className="px-4 py-3 space-y-3">
+          <a
+            href="/admin/dashboard"
+            className={`block font-medium py-2 transition-colors ${
+              isActiveRoute("/admin/dasboard") ? "text-teal-600 cursor-default" : "text-gray-600 hover:text-teal-600"
+            }`}
+            onClick={(e) => {
+              if (handleNavigation("/admin/dashboard", e)) {
+                setIsMenuOpen(false)
+              }
+            }}
+          >
+            Dashboard
+          </a>
           <a
             href="/admin/usuarios"
             className={`block font-medium py-2 transition-colors ${
