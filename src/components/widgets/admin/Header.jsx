@@ -285,7 +285,7 @@ export default function Header() {
           <a
             href="/admin/dashboard"
             className={`block font-medium py-2 transition-colors ${
-              isActiveRoute("/admin/dasboard") ? "text-teal-600 cursor-default" : "text-gray-600 hover:text-teal-600"
+              isActiveRoute("/admin/dashboard") ? "text-teal-600 cursor-default" : "text-gray-600 hover:text-teal-600"
             }`}
             onClick={(e) => {
               if (handleNavigation("/admin/dashboard", e)) {
